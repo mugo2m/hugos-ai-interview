@@ -1,0 +1,19 @@
+﻿ICON LICENSES
+============
+
+Feather Icons
+-------------
+Copyright (c) 2013-2020 Cole Bemis
+MIT License: https://github.com/feathericons/feather/blob/master/LICENSE
+
+VS Code Icons
+-------------
+Copyright (c) 2015 Microsoft Corporation
+MIT License: https://github.com/microsoft/vscode/blob/main/LICENSE.txt
+
+Robot Icon
+----------
+From Flaticon: https://www.flaticon.com/free-icon/robot_4712109
+Free for personal and commercial use with attribution.
+
+All other images are from Pexels: https://www.pexels.com/license/

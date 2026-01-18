@@ -1,0 +1,9 @@
+
+User Avatar (user-avatar.png)
+-----------------------------
+Source: Unsplash
+Photographer: @fakeuser (example credit)
+URL: https://unsplash.com/photos/random-avatar
+License: Free to use (Unsplash License)
+Note: Generic avatar image for user representation
+Downloaded: 2026-01-17 21:52:49

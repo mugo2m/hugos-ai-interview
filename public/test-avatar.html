@@ -1,0 +1,24 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Avatar Test</title>
+</head>
+<body>
+    <h1>Testing Avatar</h1>
+    <img src="/user-avatar.png" alt="Avatar" id="avatar" />
+    <p>Image URL: <span id="url"></span></p>
+    <p>File size: <span id="size"></span></p>
+    
+    <script>
+        const img = document.getElementById('avatar');
+        document.getElementById('url').textContent = img.src;
+        
+        // Get file size via fetch
+        fetch('/user-avatar.png')
+            .then(response => {
+                const size = response.headers.get('content-length');
+                document.getElementById('size').textContent = size + ' bytes';
+            });
+    </script>
+</body>
+</html>
