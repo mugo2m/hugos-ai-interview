@@ -2,8 +2,8 @@
 "use client";
 
 import { toast } from "sonner";
-import SpeechToText from "./speechtotext";
-import TextToSpeech from "./texttospeech";
+import SpeechToText from "./speechTotext";
+import TextToSpeech from "./textTospeech";
 
 export interface VoiceMessage {
   role: "user" | "assistant";
