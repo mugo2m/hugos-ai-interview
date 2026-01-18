@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,91 +36,63 @@ EXAMPLE FORMAT:
 
 QUESTIONS:`;
 
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     if (!apiKey) {
-      console.error("HuggingFace API key is missing");
-      throw new Error("API configuration error");
-    }
-
-    const targetModel = "HuggingFaceTB/SmolLM3-3B";
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
-
-    console.log(`Calling HuggingFace API for ${role} ${level} position...`);
-
-    let response;
-    try {
-      response = await fetch(
-        "https://router.huggingface.co/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({
-            model: targetModel,
-            messages: [
-              {
-                "role": "system",
-                "content": "You are a professional interview question generator. ALWAYS respond with valid JSON arrays only. No explanations."
-              },
-              {
-                "role": "user",
-                "content": prompt
-              }
-            ],
-            max_tokens: 1000,
-            temperature: 0.8,
-            top_p: 0.95,
-            frequency_penalty: 0.3,
-            presence_penalty: 0.2
-          }),
-          signal: controller.signal
-        }
+      console.error("Google Generative AI API key is missing");
+      return NextResponse.json(
+        { error: "API configuration error - Gemini API key required" },
+        { status: 500 }
       );
-    } catch (fetchError: any) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        throw new Error("HuggingFace API request timeout (45s)");
+    }
+
+    console.log(`Calling Gemini API for ${role} ${level} position...`);
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 1000,
+        responseMimeType: "application/json"
       }
-      throw new Error(`Network error: ${fetchError.message}`);
-    }
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "No error details");
-      console.error("HuggingFace API error:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorText
-      });
-
-      // Use fallback questions for API errors
-      return NextResponse.json(getFallbackQuestions(role, level, type), {
-        status: 200,
-        headers: {
-          'X-Fallback-Questions': 'true'
-        }
-      });
-    }
-
-    const data = await response.json().catch(async (e) => {
-      const text = await response.text();
-      console.error("Failed to parse JSON response:", text);
-      throw new Error("Invalid JSON response from HuggingFace");
     });
 
-    const generatedText = data.choices?.[0]?.message?.content || "";
-
-    if (!generatedText.trim()) {
-      throw new Error("Empty response from HuggingFace");
+    let generatedText;
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      generatedText = response.text();
+    } catch (error: any) {
+      console.error("Gemini API error:", error.message);
+      // ❌ NO FALLBACK - Return error
+      return NextResponse.json({
+        success: false,
+        error: `Gemini API error: ${error.message}`,
+        solution: "Please check your API key and try again"
+      }, {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      });
     }
 
-    console.log("Raw HuggingFace response:", generatedText.substring(0, 200) + "...");
+    if (!generatedText.trim()) {
+      // ❌ NO FALLBACK - Return error
+      return NextResponse.json({
+        success: false,
+        error: "Empty response from Gemini AI",
+        solution: "Please try again with a different prompt"
+      }, {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      });
+    }
+
+    console.log("Raw Gemini response:", generatedText.substring(0, 200) + "...");
 
     // Parse the response into an array of questions
     const questionsArray = parseGeneratedText(generatedText, parseInt(amount) || 5);
@@ -128,7 +101,17 @@ QUESTIONS:`;
     const cleanQuestionsArray = cleanQuestions(questionsArray);
 
     if (cleanQuestionsArray.length === 0) {
-      throw new Error("No valid questions generated after cleaning");
+      // ❌ NO FALLBACK - Return error
+      return NextResponse.json({
+        success: false,
+        error: "No valid questions generated from AI response",
+        solution: "Please try again with more specific requirements"
+      }, {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      });
     }
 
     // Save to Firebase
@@ -145,7 +128,8 @@ QUESTIONS:`;
       coverImage: getRandomInterviewCover(),
       createdAt: new Date().toISOString(),
       questionCount: cleanQuestionsArray.length,
-      source: data.choices ? "huggingface" : "fallback"
+      source: "gemini",
+      isRealInterview: true
     };
 
     try {
@@ -162,7 +146,7 @@ QUESTIONS:`;
       success: true,
       questions: cleanQuestionsArray,
       count: cleanQuestionsArray.length,
-      interviewId: interview.createdAt // Can be used as reference
+      interviewId: interview.createdAt
     }, {
       status: 200,
       headers: {
@@ -173,11 +157,10 @@ QUESTIONS:`;
   } catch (error: any) {
     console.error("API Route Error:", error);
 
-    // Return structured error for client
+    // ❌ NO FALLBACK - Return error
     return NextResponse.json({
       success: false,
-      error: error.message || "Unknown error occurred",
-      fallbackQuestions: getFallbackQuestions("Software Engineer", "Mid-level", "technical")
+      error: error.message || "Unknown error occurred"
     }, {
       status: 500,
       headers: {
@@ -311,78 +294,13 @@ function cleanQuestions(questions: string[]): string[] {
     });
 }
 
-// Fallback questions generator
-function getFallbackQuestions(role: string, level: string, type: string): string[] {
-  const baseQuestions = [
-    "Tell me about your experience relevant to this role.",
-    "What attracted you to our company and this position?",
-    "How do you stay updated with industry trends and new technologies?",
-    "Describe a challenging project you worked on and how you overcame the difficulties.",
-    "How do you prioritize tasks when working on multiple projects?",
-    "What development methodologies are you familiar with?",
-    "How do you handle constructive criticism or feedback on your work?",
-    "Where do you see yourself professionally in three to five years?",
-    "What are your strengths and areas for improvement?",
-    "Do you have any questions for me about the role or company?"
-  ];
-
-  // Add role-specific questions
-  const roleSpecific: Record<string, string[]> = {
-    "frontend": [
-      "How do you ensure your applications are accessible?",
-      "What's your approach to responsive design?",
-      "How do you optimize website performance?"
-    ],
-    "backend": [
-      "How do you design scalable APIs?",
-      "What's your experience with database optimization?",
-      "How do you handle data security and privacy?"
-    ],
-    "fullstack": [
-      "How do you manage state across frontend and backend?",
-      "What's your approach to API design for frontend consumption?",
-      "How do you ensure consistency between different parts of the application?"
-    ]
-  };
-
-  // Filter by type
-  let filteredQuestions = baseQuestions;
-  if (type.toLowerCase().includes('technical')) {
-    filteredQuestions = filteredQuestions.filter(q =>
-      q.toLowerCase().includes('experience') ||
-      q.toLowerCase().includes('technologies') ||
-      q.toLowerCase().includes('project') ||
-      q.toLowerCase().includes('methodologies')
-    );
-  } else if (type.toLowerCase().includes('behavioral')) {
-    filteredQuestions = filteredQuestions.filter(q =>
-      q.toLowerCase().includes('attracted') ||
-      q.toLowerCase().includes('challenging') ||
-      q.toLowerCase().includes('prioritize') ||
-      q.toLowerCase().includes('criticism') ||
-      q.toLowerCase().includes('strengths')
-    );
-  }
-
-  // Add role-specific questions
-  const roleKey = role.toLowerCase();
-  if (roleKey.includes('frontend')) {
-    filteredQuestions = [...filteredQuestions, ...roleSpecific.frontend];
-  } else if (roleKey.includes('backend')) {
-    filteredQuestions = [...filteredQuestions, ...roleSpecific.backend];
-  } else if (roleKey.includes('fullstack')) {
-    filteredQuestions = [...filteredQuestions, ...roleSpecific.fullstack];
-  }
-
-  return filteredQuestions.slice(0, 10); // Return up to 10 questions
-}
-
 export async function GET() {
   return NextResponse.json({
     status: "operational",
-    message: "Interview Questions API",
+    message: "Interview Questions API - REAL INTERVIEWS ONLY",
     endpoints: {
-      POST: "/api/generate-questions",
+      askConfig: "POST /api/vapi/ask-config (get configuration questions)",
+      generate: "POST /api/vapi/generate (generate real interview with answers)",
       body: {
         type: "string (technical/behavioral)",
         role: "string",
@@ -391,7 +309,8 @@ export async function GET() {
         amount: "number (optional, default 5)",
         userid: "string"
       }
-    }
+    },
+    note: "This API only returns real AI-generated interviews. No fallback questions."
   }, {
     status: 200
   });

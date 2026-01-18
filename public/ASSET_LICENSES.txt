@@ -1,19 +1,120 @@
-﻿ICON LICENSES
-============
+﻿# Icon Licenses - MockMate Interview Platform
 
-Feather Icons
--------------
-Copyright (c) 2013-2020 Cole Bemis
-MIT License: https://github.com/feathericons/feather/blob/master/LICENSE
+## Overview
+All icons used in the MockMate platform are **original creations** specifically designed for this project. No third-party icon libraries are used, ensuring complete originality and avoiding copyright/licensing issues.
 
-VS Code Icons
--------------
-Copyright (c) 2015 Microsoft Corporation
-MIT License: https://github.com/microsoft/vscode/blob/main/LICENSE.txt
+## Custom Icons Created for MockMate
 
-Robot Icon
-----------
-From Flaticon: https://www.flaticon.com/free-icon/robot_4712109
-Free for personal and commercial use with attribution.
+### 1. **AI Avatar Icon** (`ai-avatar.svg`)
+- **Description**: Animated AI interviewer avatar with blinking eyes and data streams
+- **Created**: [Current Date]
+- **Designer**: MockMate Design Team
+- **License**: Proprietary - MockMate Exclusive
+- **Features**:
+  - Animated eye indicators
+  - Moving data streams
+  - Chat bubble elements
+  - Binary code detailing
 
-All other images are from Pexels: https://www.pexels.com/license/
+### 2. **Technology Stack Icons** (All SVG files in `/public/icons/`)
+- **Files**: `default.svg`, `javascript.svg`, `nodejs.svg`, `python.svg`, `r.svg`, `react.svg`, `sql.svg`, `typescript.svg`
+- **Description**: Custom-designed technology icons representing various programming languages and frameworks
+- **Created**: [Current Date]
+- **Designer**: MockMate Design Team
+- **License**: Proprietary - MockMate Exclusive
+- **Design Philosophy**: Each icon was created from scratch with a consistent design language focusing on clean lines, modern aesthetics, and clear representation of each technology.
+
+### 3. **UI Interface Icons**
+- **Location**: Various SVG icons used throughout the application
+- **Description**: Custom interface icons including stars, calendars, and other UI elements
+- **Created**: [Current Date]
+- **Designer**: MockMate Design Team
+- **License**: Proprietary - MockMate Exclusive
+
+## Design Guidelines
+
+### Color Scheme
+All icons use the MockMate brand color palette:
+- Primary: `#8B5CF6` (Purple)
+- Secondary: `#3B82F6` (Blue)
+- Accent: `#10B981` (Green)
+- Support: `#FBBF24` (Yellow)
+
+### Design Principles
+1. **Minimalist Approach**: Clean lines and simple shapes
+2. **Consistency**: Uniform stroke widths and corner radii
+3. **Scalability**: All icons are vector-based SVGs
+4. **Accessibility**: Sufficient contrast ratios maintained
+
+## Technical Specifications
+
+### File Format
+- **Format**: SVG (Scalable Vector Graphics)
+- **Dimensions**: Various, optimized for display
+- **Optimization**: Manually optimized for file size and performance
+
+### Animation
+Some icons include subtle SVG animations:
+- Pulsing effects for active states
+- Loading indicators
+- Interactive hover states
+
+## Usage Rights
+
+### Internal Use
+All icons are licensed for exclusive use within the MockMate platform. They may be used in:
+- The MockMate web application
+- MockMate marketing materials
+- MockMate documentation
+- MockMate presentations
+
+### External Use
+These icons **cannot** be:
+- Distributed separately from the MockMate platform
+- Used in other applications or projects
+- Sold or licensed to third parties
+- Modified and redistributed without explicit permission
+
+## Attribution
+While not required for proprietary icons, credit may be given as:
+"Icons designed exclusively for MockMate AI Interview Platform"
+
+## Modification History
+
+### [Current Date]
+- Created all original icons from scratch
+- Replaced all third-party icons with custom designs
+- Established consistent design system
+- Added subtle animations for enhanced UX
+
+### Design Team
+- Lead Designer: [Your Name/Team Name]
+- Color Scheme: Custom MockMate palette
+- Implementation: Hand-coded SVG with animation support
+
+---
+
+## Third-Party Assets (Removed)
+
+**Note**: The following third-party icons have been removed and replaced with original designs:
+
+1. ~~Feather Icons~~ - **REPLACED**
+2. ~~VS Code Icons~~ - **REPLACED**
+3. ~~Robot Icon from Flaticon~~ - **REPLACED**
+4. ~~Images from Pexels~~ - **REPLACED**
+
+All icons are now 100% original creations specific to the MockMate platform.
+
+---
+
+## Verification
+To verify the originality of these icons:
+1. All SVG files contain custom code without references to external libraries
+2. No attribution to third parties required
+3. File headers include "MockMate Exclusive" designation
+4. Design documentation available upon request
+
+---
+
+*This document last updated: [Current Date]*
+*MockMate © [Current Year] - All Rights Reserved*

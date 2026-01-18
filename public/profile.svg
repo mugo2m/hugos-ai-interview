@@ -1,8 +1,48 @@
-<?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" width="401px" height="401px" enable-background="new 312.809 0 401 401" version="1.1" viewBox="312.809 0 401 401">
-<g transform="matrix(1.223 0 0 1.223 -467.5 -843.44)">
-	<rect x="601.45" y="653.07" width="401" height="401" fill="#E4E6E7"/>
-	<path d="m802.38 908.08c-84.515 0-153.52 48.185-157.38 108.62h314.79c-3.87-60.44-72.9-108.62-157.41-108.62z" fill="#AEB4B7"/>
-	<path d="m881.37 818.86c0 46.746-35.106 84.641-78.41 84.641s-78.41-37.895-78.41-84.641 35.106-84.641 78.41-84.641c43.31 0 78.41 37.9 78.41 84.64z" fill="#AEB4B7"/>
-</g>
+
+<svg width="122.88" height="111.48" viewBox="0 0 122.88 111.48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sky background -->
+  <rect x="10" y="10" width="102.88" height="91.48" fill="#DBEAFE" stroke="#93C5FD" stroke-width="2" rx="10"/>
+
+  <!-- Sun and cloud -->
+  <circle cx="90" cy="30" r="15" fill="#FBBF24" stroke="#F59E0B" stroke-width="2"/>
+  <path d="M90 15V45" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M75 30H105" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Cloud -->
+  <ellipse cx="40" cy="40" rx="25" ry="15" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2"/>
+  <ellipse cx="55" cy="35" rx="20" ry="12" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2"/>
+  <ellipse cx="30" cy="35" rx="15" ry="10" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="2"/>
+
+  <!-- Rain drops -->
+  <path d="M35 55L33 65" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+  <path d="M45 50L43 65" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+  <path d="M55 55L53 70" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+  <path d="M40 60L38 75" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+  <path d="M50 60L48 80" stroke="#3B82F6" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Ground with crops -->
+  <rect x="10" y="80" width="102.88" height="21.48" fill="#92400E" stroke="#78350F" stroke-width="3"/>
+
+  <!-- Growing plants -->
+  <path d="M25 80V60" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M35 80V55" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M45 80V65" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M55 80V60" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M65 80V70" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M75 80V55" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M85 80V65" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+  <path d="M95 80V60" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Plant leaves -->
+  <circle cx="25" cy="55" r="5" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+  <circle cx="35" cy="50" r="6" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+  <circle cx="45" cy="60" r="4" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+  <circle cx="55" cy="55" r="5" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+  <circle cx="65" cy="65" r="4" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+  <circle cx="75" cy="50" r="6" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+  <circle cx="85" cy="60" r="5" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+  <circle cx="95" cy="55" r="5" fill="#22C55E" stroke="#16A34A" stroke-width="1.5"/>
+
+  <!-- Water puddle -->
+  <ellipse cx="70" cy="95" rx="15" ry="5" fill="#3B82F6" opacity="0.6" stroke="#1D4ED8" stroke-width="1.5"/>
 </svg>

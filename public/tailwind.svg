@@ -1,3 +1,38 @@
-<svg width="23" height="14" viewBox="0 0 23 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M11.5868 0.28418C8.65282 0.28418 6.81959 1.7766 6.08578 4.76143C7.18606 3.26901 8.46959 2.70947 9.93635 3.08235C10.7732 3.29505 11.3716 3.91284 12.0334 4.59683C13.1122 5.71062 14.3608 6.99961 17.0873 6.99961C20.0209 6.99961 21.8545 5.50719 22.5879 2.5228C21.4881 4.01522 20.2045 4.57476 18.7378 4.20144C17.9005 3.98874 17.3021 3.37095 16.6402 2.6874C15.5615 1.57272 14.3133 0.28418 11.5868 0.28418ZM6.08578 6.99961C3.15225 6.99961 1.31859 8.49202 0.585205 11.4769C1.68549 9.98444 2.96902 9.42489 4.43535 9.79778C5.27263 10.0105 5.87106 10.6283 6.53287 11.3123C7.6116 12.4261 8.85977 13.715 11.5868 13.715C14.5203 13.715 16.354 12.2231 17.0873 9.23823C15.9871 10.7306 14.7035 11.2902 13.2368 10.9173C12.3999 10.7042 11.8015 10.0864 11.1397 9.40283C10.0609 8.28903 8.81235 6.99961 6.08578 6.99961Z" fill="#38BDF8"/>
+<svg width="122.88" height="111.48" viewBox="0 0 122.88 111.48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Wheat stalks -->
+  <path d="M30 90V40" stroke="#A16207" stroke-width="3" stroke-linecap="round"/>
+  <path d="M40 90V35" stroke="#A16207" stroke-width="3" stroke-linecap="round"/>
+  <path d="M50 90V45" stroke="#A16207" stroke-width="3" stroke-linecap="round"/>
+  <path d="M60 90V30" stroke="#A16207" stroke-width="3" stroke-linecap="round"/>
+  <path d="M70 90V40" stroke="#A16207" stroke-width="3" stroke-linecap="round"/>
+  <path d="M80 90V35" stroke="#A16207" stroke-width="3" stroke-linecap="round"/>
+  <path d="M90 90V45" stroke="#A16207" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Wheat heads -->
+  <circle cx="30" cy="25" r="8" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+  <circle cx="40" cy="20" r="7" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+  <circle cx="50" cy="30" r="6" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+  <circle cx="60" cy="15" r="9" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+  <circle cx="70" cy="25" r="7" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+  <circle cx="80" cy="20" r="6" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+  <circle cx="90" cy="30" r="8" fill="#FBBF24" stroke="#D97706" stroke-width="2"/>
+
+  <!-- Ground -->
+  <rect x="20" y="90" width="82.88" height="21.48" fill="#92400E" stroke="#78350F" stroke-width="3"/>
+
+  <!-- Tractor -->
+  <rect x="100" y="70" width="22.88" height="15" fill="#3B82F6" stroke="#1D4ED8" stroke-width="2" rx="3"/>
+  <circle cx="105" cy="95" r="8" fill="#4B5563" stroke="#374151" stroke-width="2"/>
+  <circle cx="117.88" cy="95" r="8" fill="#4B5563" stroke="#374151" stroke-width="2"/>
+  <rect x="110" y="60" width="8" height="10" fill="#1F2937" stroke="#111827" stroke-width="2"/>
+
+  <!-- Leaves on stalks -->
+  <path d="M35 60L25 55" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M35 70L25 75" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M45 50L35 45" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M45 75L35 80" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M65 50L55 45" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M65 65L55 70" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M85 55L75 50" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
+  <path d="M85 70L75 75" stroke="#16A34A" stroke-width="2" stroke-linecap="round"/>
 </svg>

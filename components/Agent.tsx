@@ -85,6 +85,46 @@ const Agent = ({
     setTimeout(checkVoiceSupport, 500);
   }, []);
 
+  // Handle interview completion
+  const handleInterviewCompletion = (data: any) => {
+    console.log("🎉 Interview completion data received:", data);
+
+    // Save completion data to localStorage immediately
+    const completionData = {
+      interviewId: data.interviewId || interviewId,
+      timestamp: new Date().toISOString(),
+      totalQuestions: data.questionsAsked || questions.length,
+      answeredQuestions: data.answersGiven || 0,
+      userId: data.userId || userId || debugInfo.userId,
+      feedbackId: data.feedbackId,
+      success: data.success,
+      fallback: data.fallback
+    };
+
+    localStorage.setItem('interviewCompletion', JSON.stringify(completionData));
+    console.log("💾 Saved to localStorage:", completionData);
+
+    // Show immediate success message
+    toast.success("✅ Interview completed! Redirecting to feedback...");
+
+    // Clear any existing timeout
+    if (redirectTimerRef.current) {
+      clearTimeout(redirectTimerRef.current);
+    }
+
+    // Redirect after 3 seconds
+    redirectTimerRef.current = setTimeout(() => {
+      const targetInterviewId = data.interviewId || interviewId;
+      if (targetInterviewId) {
+        console.log("🚀 Redirecting to feedback page for interview:", targetInterviewId);
+        window.location.href = `/interview/${targetInterviewId}/feedback`;
+      } else {
+        console.error("No interview ID available for redirect");
+        window.location.href = '/';
+      }
+    }, 3000);
+  };
+
   // Initialize voice service when voice is enabled
   useEffect(() => {
     if (!voiceEnabled) {
@@ -195,6 +235,7 @@ const Agent = ({
         }));
       });
 
+      // CRITICAL: Register onComplete callback
       voiceServiceRef.current.onComplete((data) => {
         console.log("🎉 Interview completed:", data);
 
@@ -208,19 +249,8 @@ const Agent = ({
           serviceStatus: "COMPLETED"
         }));
 
-        if (data.success || data.fallback) {
-          toast.success("✅ Interview completed! Redirecting...");
-
-          // Auto-redirect after 2 seconds
-          redirectTimerRef.current = setTimeout(() => {
-            const targetInterviewId = data.interviewId || interviewId;
-            if (targetInterviewId) {
-              window.location.href = `/interview/${targetInterviewId}/feedback`;
-            } else {
-              window.location.href = '/';
-            }
-          }, 2000);
-        }
+        // Handle interview completion
+        handleInterviewCompletion(data);
       });
 
       setDebugInfo(prev => ({ ...prev, serviceStatus: "READY" }));
@@ -312,7 +342,7 @@ const Agent = ({
   // ============ MANUAL CONTROL FUNCTIONS ============
 
   const submitAnswer = async () => {
-    if (voiceServiceRef.current && typeof voiceServiceRef.current.submitAnswer === 'function') {
+    if (voiceServiceRef.current) {
       try {
         await voiceServiceRef.current.submitAnswer();
         setUserTranscript(""); // Clear transcript after submission
@@ -326,7 +356,7 @@ const Agent = ({
   };
 
   const skipQuestion = async () => {
-    if (voiceServiceRef.current && typeof voiceServiceRef.current.skipQuestion === 'function') {
+    if (voiceServiceRef.current) {
       try {
         await voiceServiceRef.current.skipQuestion();
         setUserTranscript(""); // Clear transcript

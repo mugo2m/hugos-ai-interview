@@ -1,13 +1,13 @@
 "use server";
 import { db } from "@/firebase/admin";
-import { feedbackSchema } from "@/constants";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function createFeedback(params: CreateFeedbackParams) {
   const { interviewId, userId, transcript, feedbackId } = params;
 
   console.log("📝 [createFeedback] Starting feedback creation for interview:", interviewId);
 
-  // 🔥 ADDED: Validate input parameters before proceeding
+  // Validate input parameters before proceeding
   if (!interviewId || !userId) {
     console.error("❌ [createFeedback] Missing required parameters:", {
       interviewId,
@@ -39,11 +39,14 @@ export async function createFeedback(params: CreateFeedbackParams) {
 
     console.log("🤖 [createFeedback] Generating AI feedback for transcript length:", transcript.length);
 
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     if (!apiKey) {
-      console.error("HuggingFace API key is missing");
-      throw new Error("API configuration error");
+      console.error("Google Generative AI API key is missing");
+      return {
+        success: false,
+        error: "API configuration error"
+      };
     }
 
     const prompt = `You are an AI interviewer analyzing a mock interview. Your task is to evaluate the candidate based on structured categories.
@@ -73,79 +76,42 @@ IMPORTANT FORMATTING RULES:
 5. areasForImprovement MUST be an array of strings
 6. No explanations, no markdown, no additional text outside the JSON object`;
 
-    const targetModel = "HuggingFaceTB/SmolLM3-3B";
+    console.log("📡 [createFeedback] Calling Gemini API with model: gemini-2.5-pro");
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-pro"
+    });
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-    console.log(`📡 [createFeedback] Calling HuggingFace API with model: ${targetModel}`);
-
-    let response;
+    let generatedText;
     try {
-      response = await fetch(
-        "https://router.huggingface.co/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({
-            model: targetModel,
-            messages: [
-              {
-                "role": "system",
-                "content": "You are a professional interviewer. Return ONLY valid JSON objects. categoryScores MUST be an array."
-              },
-              {
-                "role": "user",
-                "content": prompt
-              }
-            ],
-            max_tokens: 2000,
-            temperature: 0.7,
-            top_p: 0.9,
-            response_format: { type: "json_object" }
-          }),
-          signal: controller.signal
-        }
-      );
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      generatedText = response.text();
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
-      console.error("❌ [createFeedback] Network error:", fetchError.message);
-      throw new Error(`Network error: ${fetchError.message}`);
+      console.error("❌ [createFeedback] Gemini API error:", fetchError.message);
+      return {
+        success: false,
+        error: `Gemini API error: ${fetchError.message}`
+      };
     }
 
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "No error details");
-      console.error("❌ [createFeedback] HuggingFace API error:", {
-        status: response.status,
-        statusText: response.statusText
-      });
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
-    }
-
-    let data;
-    try {
-      data = await response.json();
-    } catch (jsonError: any) {
-      const text = await response.text();
-      console.error("❌ [createFeedback] Failed to parse JSON response:", text.substring(0, 200));
-      throw new Error("Invalid JSON response from HuggingFace");
-    }
-
-    const generatedText = data.choices?.[0]?.message?.content || "";
-
-    if (!generatedText.trim()) {
-      console.error("❌ [createFeedback] Empty response from HuggingFace");
-      throw new Error("Empty response from AI");
+    if (!generatedText || !generatedText.trim()) {
+      console.error("❌ [createFeedback] Empty response from Gemini");
+      return {
+        success: false,
+        error: "Empty response from AI"
+      };
     }
 
     console.log("📄 [createFeedback] Raw response received (first 500 chars):", generatedText.substring(0, 500) + "...");
 
-    // Parse and validate the feedback data
     let feedbackData = parseAndValidateFeedback(generatedText);
 
     console.log("✅ [createFeedback] Parsed feedback data:", {
@@ -154,25 +120,28 @@ IMPORTANT FORMATTING RULES:
       isCategoryScoresArray: Array.isArray(feedbackData.categoryScores)
     });
 
-    // 🔥 ADDED: Ensure userId is not undefined before saving
-    if (!userId) {
-      console.error("❌ [createFeedback] userId is undefined, cannot save feedback");
-      throw new Error("User ID is required to save feedback");
+    // Validate parsed data - REAL INTERVIEW ONLY
+    if (!feedbackData.totalScore || !Array.isArray(feedbackData.categoryScores) || feedbackData.categoryScores.length === 0) {
+      console.error("❌ [createFeedback] Invalid feedback data from AI");
+      return {
+        success: false,
+        error: "AI returned invalid evaluation format"
+      };
     }
 
-    // Save to Firebase
     const feedback = {
       interviewId: interviewId,
-      userId: userId, // This was causing the error if undefined
-      totalScore: feedbackData.totalScore || 75,
-      categoryScores: feedbackData.categoryScores || createDefaultCategoryScores(),
-      strengths: feedbackData.strengths || ["Good participation", "Demonstrated relevant knowledge"],
-      areasForImprovement: feedbackData.areasForImprovement || ["Could provide more examples", "Work on response structure"],
-      finalAssessment: feedbackData.finalAssessment || "Candidate participated in the mock interview.",
+      userId: userId,
+      totalScore: feedbackData.totalScore,
+      categoryScores: feedbackData.categoryScores,
+      strengths: feedbackData.strengths || [],
+      areasForImprovement: feedbackData.areasForImprovement || [],
+      finalAssessment: feedbackData.finalAssessment || "Evaluation completed.",
       createdAt: new Date().toISOString(),
-      model: targetModel,
+      model: "gemini-2.5-pro",
       status: "completed",
-      version: "1.0"
+      version: "1.0",
+      isRealInterview: true
     };
 
     console.log("💾 [createFeedback] Saving feedback to Firestore...");
@@ -186,7 +155,6 @@ IMPORTANT FORMATTING RULES:
       ? db.collection("feedback").doc(feedbackId)
       : db.collection("feedback").doc();
 
-    // 🔥 ADDED: Enable ignoreUndefinedProperties to prevent the error
     await feedbackRef.set(feedback, { ignoreUndefinedProperties: true });
 
     console.log("✅ [createFeedback] Feedback saved with ID:", feedbackRef.id);
@@ -202,16 +170,16 @@ IMPORTANT FORMATTING RULES:
   } catch (error: any) {
     console.error("❌ [createFeedback] Error in feedback creation:", error.message);
 
-    // Create guaranteed-safe fallback feedback
-    return await createFallbackFeedback(interviewId, userId, error.message, feedbackId);
+    return {
+      success: false,
+      error: error.message || "Failed to generate interview evaluation"
+    };
   }
 }
 
-// Helper function to parse and validate feedback
 function parseAndValidateFeedback(text: string): any {
   const cleanedText = text.trim();
 
-  // Remove any markdown code blocks
   const withoutMarkdown = cleanedText
     .replace(/```json\s*/g, '')
     .replace(/```\s*/g, '')
@@ -220,42 +188,35 @@ function parseAndValidateFeedback(text: string): any {
 
   let parsedData;
 
-  // Try to parse as JSON
   try {
     parsedData = JSON.parse(withoutMarkdown);
   } catch (e) {
-    // Try to find JSON object within text
     const jsonMatch = withoutMarkdown.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
         parsedData = JSON.parse(jsonMatch[0]);
       } catch (e2) {
-        console.log("⚠️ Could not parse JSON, using default structure");
-        return createDefaultFeedbackStructure();
+        console.error("❌ Could not parse JSON from AI response");
+        throw new Error("Invalid JSON response from AI");
       }
     } else {
-      console.log("⚠️ No JSON found in response");
-      return createDefaultFeedbackStructure();
+      console.error("❌ No JSON found in AI response");
+      throw new Error("No valid evaluation data found");
     }
   }
 
-  // Validate and normalize the structure
   return normalizeFeedbackStructure(parsedData);
 }
 
-// Helper function to normalize feedback structure
 function normalizeFeedbackStructure(data: any): any {
   const result: any = {};
 
-  // Ensure totalScore is a valid number
   result.totalScore = typeof data.totalScore === 'number'
     ? Math.max(0, Math.min(100, data.totalScore))
     : 75;
 
-  // Ensure categoryScores is a valid array
   if (Array.isArray(data.categoryScores)) {
     result.categoryScores = data.categoryScores.map((item: any, index: number) => {
-      // Use default category names if not provided
       const defaultCategories = [
         "Communication Skills",
         "Technical Knowledge",
@@ -271,144 +232,39 @@ function normalizeFeedbackStructure(data: any): any {
           : 70,
         comment: item.comment || `Evaluation based on interview performance`
       };
-    }).slice(0, 5); // Ensure max 5 items
+    }).slice(0, 5);
   } else {
-    result.categoryScores = createDefaultCategoryScores();
+    throw new Error("Invalid category scores format");
   }
 
-  // Ensure strengths is an array of strings
   if (Array.isArray(data.strengths)) {
     result.strengths = data.strengths
       .filter((item: any) => typeof item === 'string')
       .slice(0, 5);
   } else {
-    result.strengths = ["Good participation", "Demonstrated relevant knowledge"];
+    result.strengths = [];
   }
 
-  // Ensure areasForImprovement is an array of strings
   if (Array.isArray(data.areasForImprovement)) {
     result.areasForImprovement = data.areasForImprovement
       .filter((item: any) => typeof item === 'string')
       .slice(0, 5);
   } else {
-    result.areasForImprovement = ["Could provide more examples", "Work on response structure"];
+    result.areasForImprovement = [];
   }
 
-  // Ensure finalAssessment is a string
   result.finalAssessment = typeof data.finalAssessment === 'string'
     ? data.finalAssessment
-    : "Candidate participated in the mock interview. Further evaluation would benefit from more detailed responses.";
+    : "Evaluation completed based on interview performance.";
 
   return result;
 }
 
-// Helper function to create default category scores
-function createDefaultCategoryScores(): Array<{name: string, score: number, comment: string}> {
-  return [
-    {
-      name: "Communication Skills",
-      score: 70,
-      comment: "Clear communication with room for more structured responses"
-    },
-    {
-      name: "Technical Knowledge",
-      score: 75,
-      comment: "Good understanding of relevant technical concepts"
-    },
-    {
-      name: "Problem Solving",
-      score: 72,
-      comment: "Logical approach to problem-solving with demonstrated analytical thinking"
-    },
-    {
-      name: "Cultural Fit",
-      score: 68,
-      comment: "Good alignment with role requirements and company values"
-    },
-    {
-      name: "Confidence and Clarity",
-      score: 70,
-      comment: "Confident delivery with clear articulation of thoughts"
-    }
-  ];
-}
-
-// Helper function to create default feedback structure
-function createDefaultFeedbackStructure() {
-  return {
-    totalScore: 75,
-    categoryScores: createDefaultCategoryScores(),
-    strengths: ["Good participation", "Demonstrated relevant knowledge", "Willingness to learn"],
-    areasForImprovement: ["Could provide more specific examples", "Work on structuring responses", "Practice time management"],
-    finalAssessment: "Candidate completed the mock interview successfully. Shows potential for growth with continued practice and experience."
-  };
-}
-
-// Helper function to create fallback feedback
-async function createFallbackFeedback(
-  interviewId: string,
-  userId: string,
-  errorMessage: string,
-  feedbackId?: string
-) {
-  try {
-    console.log("🔄 [createFallbackFeedback] Creating fallback feedback due to:", errorMessage);
-
-    const fallbackFeedback = {
-      interviewId: interviewId,
-      userId: userId,
-      totalScore: 75,
-      categoryScores: createDefaultCategoryScores(),
-      strengths: [
-        "Completed the mock interview successfully",
-        "Demonstrated willingness to learn and improve",
-        "Shows good potential for growth"
-      ],
-      areasForImprovement: [
-        "Could provide more detailed examples from past experience",
-        "Work on structuring responses for better clarity",
-        "Practice time management during answers"
-      ],
-      finalAssessment: "Candidate successfully completed the mock interview. The AI feedback system encountered a temporary issue, but overall participation and engagement were good. Shows solid foundation with areas for continued development.",
-      createdAt: new Date().toISOString(),
-      model: "fallback",
-      status: "completed",
-      error: errorMessage.substring(0, 200), // Store limited error message
-      isFallback: true,
-      version: "1.0"
-    };
-
-    const feedbackRef = feedbackId
-      ? db.collection("feedback").doc(feedbackId)
-      : db.collection("feedback").doc();
-
-    // 🔥 ADDED: Enable ignoreUndefinedProperties here too
-    await feedbackRef.set(fallbackFeedback, { ignoreUndefinedProperties: true });
-
-    console.log("✅ [createFallbackFeedback] Fallback feedback saved with ID:", feedbackRef.id);
-
-    return {
-      success: true,
-      feedbackId: feedbackRef.id,
-      fallback: true,
-      message: "Feedback generated using fallback mode"
-    };
-  } catch (fallbackError: any) {
-    console.error("❌ [createFallbackFeedback] Fallback creation failed:", fallbackError.message);
-    return {
-      success: false,
-      error: "Failed to generate feedback, even in fallback mode"
-    };
-  }
-}
-
-// 🔥 UPDATED: getFeedbackByInterviewId function with validation
 export async function getFeedbackByInterviewId(
   params: GetFeedbackByInterviewIdParams
 ): Promise<Feedback | null> {
   const { interviewId, userId } = params;
 
-  // 🔥 ADDED: Validate parameters before querying
   if (!interviewId || !userId) {
     console.warn("⚠️ [getFeedbackByInterviewId] Missing userId or interviewId:", {
       interviewId,
@@ -439,12 +295,6 @@ export async function getFeedbackByInterviewId(
     const feedbackDoc = querySnapshot.docs[0];
     const feedbackData = feedbackDoc.data();
 
-    // Ensure categoryScores is always an array for the frontend
-    if (feedbackData.categoryScores && !Array.isArray(feedbackData.categoryScores)) {
-      console.warn("⚠️ [getFeedbackByInterviewId] Converting categoryScores to array");
-      feedbackData.categoryScores = createDefaultCategoryScores();
-    }
-
     console.log("✅ [getFeedbackByInterviewId] Feedback found with ID:", feedbackDoc.id);
     console.log("📋 [getFeedbackByInterviewId] Feedback structure:", {
       totalScore: feedbackData.totalScore,
@@ -459,20 +309,17 @@ export async function getFeedbackByInterviewId(
   }
 }
 
-// Rest of your functions remain the same...
 export async function getInterviewById(id: string): Promise<Interview | null> {
   console.log("🔍 [getInterviewById] ==========================================");
   console.log("🔍 [getInterviewById] Starting with ID:", id);
   console.log("🔍 [getInterviewById] Timestamp:", new Date().toISOString());
 
-  // Validate input
   if (!id || typeof id !== 'string' || id.trim() === '') {
     console.error("❌ [getInterviewById] Invalid ID provided:", id);
     return null;
   }
 
   try {
-    // Check Firebase initialization
     console.log("🔥 [getInterviewById] Checking Firebase Admin initialization...");
 
     if (!db) {
@@ -484,11 +331,9 @@ export async function getInterviewById(id: string): Promise<Interview | null> {
     console.log("📁 [getInterviewById] Using collection: 'interviews'");
     console.log("📁 [getInterviewById] Document ID:", id);
 
-    // Create document reference
     const docRef = db.collection("interviews").doc(id);
     console.log("📄 [getInterviewById] Document reference path:", docRef.path);
 
-    // Try to get the document
     console.log("⚡ [getInterviewById] Attempting to fetch document from Firestore...");
     const doc = await docRef.get();
 
@@ -498,21 +343,17 @@ export async function getInterviewById(id: string): Promise<Interview | null> {
     if (!doc.exists) {
       console.warn(`❌ [getInterviewById] Interview not found with id: ${id}`);
 
-      // Diagnostic: Check if collection exists by trying a simple query
       console.log("🩺 [getInterviewById] Running diagnostic check...");
       try {
         const testQuery = await db.collection("interviews").limit(1).get();
         console.log(`📈 [getInterviewById] Collection 'interviews' exists with ${testQuery.size} total document(s)`);
 
-        // Check if any document has this ID pattern
         const allDocs = await db.collection("interviews").get();
         console.log(`📈 [getInterviewById] Total interviews in database: ${allDocs.size}`);
 
-        // List first few document IDs for debugging
         const docIds = allDocs.docs.slice(0, 5).map(doc => doc.id);
         console.log(`📋 [getInterviewById] Sample document IDs: ${docIds.join(', ')}`);
 
-        // Check for similar IDs (case-insensitive)
         const similarIds = allDocs.docs
           .filter(d => d.id.toLowerCase().includes(id.toLowerCase()))
           .map(d => d.id);
@@ -537,7 +378,6 @@ export async function getInterviewById(id: string): Promise<Interview | null> {
       return null;
     }
 
-    // Log key fields for debugging
     console.log("🎯 [getInterviewById] Key fields found:");
     console.log("   - id:", doc.id);
     console.log("   - role:", data.role || "MISSING");
@@ -549,7 +389,6 @@ export async function getInterviewById(id: string): Promise<Interview | null> {
     console.log("   - createdAt:", data.createdAt || "MISSING");
     console.log("   - finalized:", data.finalized !== undefined ? data.finalized : "MISSING");
 
-    // Check required fields for Interview type
     const requiredFields = ['role', 'type', 'questions', 'userId'];
     const missingFields = requiredFields.filter(field => !data[field]);
 
@@ -574,7 +413,6 @@ export async function getInterviewById(id: string): Promise<Interview | null> {
     console.error("   Error code:", error?.code);
     console.error("   Error stack:", error?.stack?.split('\n')[0]);
 
-    // Common Firebase error handling
     if (error?.code === 'permission-denied') {
       console.error("   🔐 PERMISSION DENIED - Firebase rules are blocking access");
       console.error("   🔐 Ensure Firebase Admin SDK has proper service account credentials");
@@ -620,7 +458,6 @@ export async function getInterviewsByUserId(
       ...doc.data(),
     })) as Interview[];
 
-    // Log sample of returned interviews for debugging
     if (result.length > 0) {
       console.log("📋 [getInterviewsByUserId] Sample interview IDs:", result.slice(0, 3).map(i => i.id));
     }
@@ -651,7 +488,7 @@ export async function getLatestInterviews(
       .collection("interviews")
       .where("finalized", "==", true)
       .where("userId", "!=", userId)
-      .orderBy("userId") // Required when using !=
+      .orderBy("userId")
       .orderBy("createdAt", "desc")
       .limit(limit)
       .get();
@@ -668,4 +505,52 @@ export async function getLatestInterviews(
     console.error("❌ [getLatestInterviews] Error fetching latest interviews:", error);
     return [];
   }
+}
+
+// Type definitions (add these if not already defined)
+interface CreateFeedbackParams {
+  interviewId: string;
+  userId: string;
+  transcript: Array<{ role: string; content: string }>;
+  feedbackId?: string;
+}
+
+interface GetFeedbackByInterviewIdParams {
+  interviewId: string;
+  userId: string;
+}
+
+interface Feedback {
+  id: string;
+  interviewId: string;
+  userId: string;
+  totalScore: number;
+  categoryScores: Array<{ name: string; score: number; comment: string }>;
+  strengths: string[];
+  areasForImprovement: string[];
+  finalAssessment: string;
+  createdAt: string;
+  model: string;
+  status: string;
+  version: string;
+  isRealInterview?: boolean;
+}
+
+interface Interview {
+  id: string;
+  role: string;
+  type: string;
+  level: string;
+  techstack: string[];
+  questions: string[];
+  userId: string;
+  finalized: boolean;
+  coverImage: string;
+  createdAt: string;
+  questionCount?: number;
+}
+
+interface GetLatestInterviewsParams {
+  userId: string;
+  limit?: number;
 }

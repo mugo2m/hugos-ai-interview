@@ -1,17 +1,41 @@
-﻿<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
-  <!-- Background circle -->
-  <circle cx="100" cy="100" r="95" fill="#4F46E5" />
-  
-  <!-- Face -->
-  <circle cx="100" cy="80" r="30" fill="#FFFFFF" />
-  
-  <!-- Eyes -->
-  <circle cx="85" cy="75" r="6" fill="#374151" />
-  <circle cx="115" cy="75" r="6" fill="#374151" />
-  
-  <!-- Smile -->
-  <path d="M 85 95 Q 100 110 115 95" stroke="#374151" stroke-width="4" fill="none" />
-  
-  <!-- Shoulders -->
-  <rect x="60" y="130" width="80" height="40" rx="5" fill="#FFFFFF" />
+﻿<svg width="122.88" height="111.48" viewBox="0 0 122.88 111.48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Central hub -->
+  <circle cx="61.44" cy="55.74" r="20" fill="#3B82F6" stroke="#1D4ED8" stroke-width="3"/>
+
+  <!-- Network nodes -->
+  <circle cx="30" cy="30" r="12" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  <circle cx="30" cy="81.48" r="12" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  <circle cx="92.88" cy="30" r="12" fill="#10B981" stroke="#059669" stroke-width="2"/>
+  <circle cx="92.88" cy="81.48" r="12" fill="#10B981" stroke="#059669" stroke-width="2"/>
+
+  <!-- Satellite nodes -->
+  <circle cx="15" cy="15" r="8" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+  <circle cx="15" cy="96.48" r="8" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+  <circle cx="107.88" cy="15" r="8" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+  <circle cx="107.88" cy="96.48" r="8" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+
+  <!-- Connection lines -->
+  <line x1="61.44" y1="35.74" x2="61.44" y2="30" stroke="#6B7280" stroke-width="2" stroke-linecap="round"/>
+  <line x1="61.44" y1="75.74" x2="61.44" y2="81.48" stroke="#6B7280" stroke-width="2" stroke-linecap="round"/>
+  <line x1="41.44" y1="55.74" x2="30" y2="55.74" stroke="#6B7280" stroke-width="2" stroke-linecap="round"/>
+  <line x1="81.44" y1="55.74" x2="92.88" y2="55.74" stroke="#6B7280" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Diagonal connections -->
+  <line x1="44.44" y1="41.74" x2="30" y2="30" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="44.44" y1="69.74" x2="30" y2="81.48" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="78.44" y1="41.74" x2="92.88" y2="30" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="78.44" y1="69.74" x2="92.88" y2="81.48" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round"/>
+
+  <!-- Outer connections -->
+  <line x1="22" y1="22" x2="15" y2="15" stroke="#D1D5DB" stroke-width="1" stroke-linecap="round"/>
+  <line x1="22" y1="89.48" x2="15" y2="96.48" stroke="#D1D5DB" stroke-width="1" stroke-linecap="round"/>
+  <line x1="100.88" y1="22" x2="107.88" y2="15" stroke="#D1D5DB" stroke-width="1" stroke-linecap="round"/>
+  <line x1="100.88" y1="89.48" x2="107.88" y2="96.48" stroke="#D1D5DB" stroke-width="1" stroke-linecap="round"/>
+
+  <!-- Central gear icon -->
+  <circle cx="61.44" cy="55.74" r="8" stroke="#FFFFFF" stroke-width="2"/>
+  <path d="M61.44 47.74V63.74" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M53.44 55.74H69.44" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M56.44 49.74L66.44 61.74" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+  <path d="M56.44 61.74L66.44 49.74" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
 </svg>

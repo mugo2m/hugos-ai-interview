@@ -1,5 +1,6 @@
 // app/api/process-answer/route.ts
 import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,59 +36,46 @@ export async function POST(request: NextRequest) {
 
     Keep it natural and conversational for voice synthesis. Maximum 50 words.`;
 
-    // Call AI service (using HuggingFace as an example)
-    const apiKey = process.env.HUGGINGFACE_API_KEY;
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
     if (!apiKey) {
-      // Fallback: Simple feedback generation
-      return generateFallbackFeedback(questionNumber, totalQuestions);
+      return NextResponse.json(
+        { error: "API configuration error" },
+        { status: 500 }
+      );
     }
 
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          inputs: prompt,
-          parameters: {
-            max_new_tokens: 100,
-            temperature: 0.7,
-            return_full_text: false
-          }
-        })
+    console.log(`📡 Calling Gemini API for feedback (Q${questionNumber}/${totalQuestions})...`);
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 150,
+        topP: 0.9
       }
-    );
+    });
 
-    if (!response.ok) {
-      console.warn("AI service failed, using fallback");
-      return generateFallbackFeedback(questionNumber, totalQuestions);
-    }
-
-    const data = await response.json();
-
-    // Extract AI response
     let feedback = "";
-    if (Array.isArray(data) && data[0]?.generated_text) {
-      feedback = data[0].generated_text.trim();
-    } else if (typeof data === 'string') {
-      feedback = data.trim();
-    } else if (data?.generated_text) {
-      feedback = data.generated_text.trim();
+    try {
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      feedback = response.text().trim();
+    } catch (error: any) {
+      console.error("Gemini API error:", error.message);
+      throw new Error(`Gemini API error: ${error.message}`);
     }
 
     // Clean up the feedback
     feedback = feedback
-      .replace(/<\/?s>/g, '') // Remove special tokens
-      .replace(/\[.*?\]/g, '') // Remove brackets
       .replace(/"/g, '') // Remove quotes
+      .replace(/\*\*/g, '') // Remove bold markers
+      .replace(/^\s*[\-•]\s*/g, '') // Remove bullet points
       .substring(0, 200); // Limit length
 
     if (!feedback) {
-      feedback = `Good answer for question ${questionNumber}. Let's continue.`;
+      throw new Error("Empty feedback response from AI");
     }
 
     return NextResponse.json({
@@ -103,29 +91,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: false,
-      error: error.message || "Failed to process answer",
-      feedback: "Thank you for your answer. Let's move to the next question.",
-      fallback: true
+      error: error.message || "Failed to process answer"
     }, { status: 500 });
   }
-}
-
-function generateFallbackFeedback(questionNumber: number, totalQuestions: number) {
-  const feedbacks = [
-    "Thank you for your detailed answer. That demonstrates good understanding of the concept.",
-    "Good response. You've covered the main points well.",
-    "I appreciate your answer. You're thinking in the right direction.",
-    "Well explained. You've articulated that clearly.",
-    "Good insight. That shows practical experience with this topic."
-  ];
-
-  const feedback = feedbacks[Math.floor(Math.random() * feedbacks.length)];
-
-  return NextResponse.json({
-    success: true,
-    feedback: `${feedback} Let's move to ${questionNumber < totalQuestions ? 'the next question' : 'the final summary'}.`,
-    questionNumber: questionNumber,
-    nextQuestion: questionNumber < totalQuestions,
-    fallback: true
-  });
 }

@@ -1,9 +1,9 @@
-﻿// lib/voice/VoiceService.ts - SIMPLE WORKING VERSION
+// lib/voice/VoiceService.ts - SIMPLE WORKING VERSION
 "use client";
 
 import { toast } from "sonner";
-import SpeechToText from "./speechTotext";
-import TextToSpeech from "./textTospeech";
+import SpeechToText from "./speechToText";
+import TextToSpeech from "./textToSpeech";
 
 export interface VoiceMessage {
   role: "user" | "assistant";
@@ -57,7 +57,7 @@ export class VoiceService {
     this.userId = config.userId;
     this.type = config.type;
 
-    console.log("🎤 VoiceService: Initialized");
+    console.log("?? VoiceService: Initialized");
 
     // Initialize speech services
     this.speechToText = new SpeechToText();
@@ -77,13 +77,13 @@ export class VoiceService {
 
   public setInterviewQuestions(questions: string[]): void {
     this.interviewQuestions = questions;
-    console.log("📚 VoiceService: Set", questions.length, "questions");
+    console.log("?? VoiceService: Set", questions.length, "questions");
   }
 
   // ============ INTERVIEW CONTROL ============
 
   public async startInterview(): Promise<void> {
-    console.log("🚀 VoiceService: Starting interview");
+    console.log("?? VoiceService: Starting interview");
 
     if (this.interviewQuestions.length === 0) {
       throw new Error("No interview questions set");
@@ -108,29 +108,29 @@ export class VoiceService {
       await this.askCurrentQuestion();
 
     } catch (error: any) {
-      console.error("❌ VoiceService: Failed to start:", error);
+      console.error("? VoiceService: Failed to start:", error);
       this.handleError(error.message);
     }
   }
 
   private async askCurrentQuestion(): Promise<void> {
-    console.log(`🔍 askCurrentQuestion: index=${this.currentQuestionIndex}, total=${this.interviewQuestions.length}`);
+    console.log(`?? askCurrentQuestion: index=${this.currentQuestionIndex}, total=${this.interviewQuestions.length}`);
 
     if (!this.isActive) {
-      console.log("❌ Not active, returning");
+      console.log("? Not active, returning");
       return;
     }
 
     // Check if all questions are done
     if (this.currentQuestionIndex >= this.interviewQuestions.length) {
-      console.log("🏁 All questions completed, finishing interview");
+      console.log("?? All questions completed, finishing interview");
       await this.completeInterview();
       return;
     }
 
     const question = this.interviewQuestions[this.currentQuestionIndex];
 
-    console.log(`❓ Asking question ${this.currentQuestionIndex + 1}: "${question.substring(0, 50)}..."`);
+    console.log(`? Asking question ${this.currentQuestionIndex + 1}: "${question.substring(0, 50)}..."`);
 
     // Save question
     const questionMessage: VoiceMessage = {
@@ -150,10 +150,10 @@ export class VoiceService {
   }
 
   private async startListening(): Promise<void> {
-    console.log(`🎧 startListening: active=${this.isActive}`);
+    console.log(`?? startListening: active=${this.isActive}`);
 
     if (!this.isActive || !this.speechToText) {
-      console.log("❌ Cannot start listening");
+      console.log("? Cannot start listening");
       return;
     }
 
@@ -163,22 +163,22 @@ export class VoiceService {
       transcript: ""
     });
 
-    toast.info(`🎤 Question ${this.currentQuestionIndex + 1} - Speak then click Submit`);
+    toast.info(`?? Question ${this.currentQuestionIndex + 1} - Speak then click Submit`);
 
     try {
       this.speechToText.clearTranscript();
       await this.speechToText.start();
-      console.log("✅ Listening started");
+      console.log("? Listening started");
     } catch (error: any) {
-      console.error("❌ Failed to start listening:", error);
+      console.error("? Failed to start listening:", error);
     }
   }
 
   private async handleUserTranscript(text: string, isFinal: boolean): Promise<void> {
-    console.log(`📝 handleUserTranscript: text="${text}", isFinal=${isFinal}`);
+    console.log(`?? handleUserTranscript: text="${text}", isFinal=${isFinal}`);
 
     if (!this.isActive) {
-      console.log("❌ Not active, ignoring");
+      console.log("? Not active, ignoring");
       return;
     }
 
@@ -192,10 +192,10 @@ export class VoiceService {
   // ============ MANUAL CONTROLS ============
 
   public async submitAnswer(): Promise<void> {
-    console.log(`📤 submitAnswer called for question ${this.currentQuestionIndex + 1}`);
+    console.log(`?? submitAnswer called for question ${this.currentQuestionIndex + 1}`);
 
     if (!this.isActive) {
-      console.log("❌ Not active, cannot submit");
+      console.log("? Not active, cannot submit");
       toast.error("Interview not active");
       return;
     }
@@ -207,12 +207,12 @@ export class VoiceService {
     const answerText = this.state.transcript.trim();
 
     if (!answerText) {
-      console.log("⚠️ No answer to submit");
+      console.log("?? No answer to submit");
       toast.warning("Please speak an answer first");
       return;
     }
 
-    console.log(`✅ Submitting answer: "${answerText.substring(0, 50)}..."`);
+    console.log(`? Submitting answer: "${answerText.substring(0, 50)}..."`);
 
     // Save answer
     const answerMessage: VoiceMessage = {
@@ -223,7 +223,7 @@ export class VoiceService {
     this.messages.push(answerMessage);
     this.onUpdateCallback?.(this.messages);
 
-    toast.success(`✅ Answer ${this.currentQuestionIndex + 1} submitted!`);
+    toast.success(`? Answer ${this.currentQuestionIndex + 1} submitted!`);
 
     // Acknowledge
     await this.speak("Thank you for your answer.");
@@ -240,10 +240,10 @@ export class VoiceService {
   }
 
   public async skipQuestion(): Promise<void> {
-    console.log(`⏭️ skipQuestion called for question ${this.currentQuestionIndex + 1}`);
+    console.log(`?? skipQuestion called for question ${this.currentQuestionIndex + 1}`);
 
     if (!this.isActive) {
-      console.log("❌ Not active, cannot skip");
+      console.log("? Not active, cannot skip");
       return;
     }
 
@@ -260,7 +260,7 @@ export class VoiceService {
     this.messages.push(skipMessage);
     this.onUpdateCallback?.(this.messages);
 
-    toast.info(`⏭️ Question ${this.currentQuestionIndex + 1} skipped`);
+    toast.info(`?? Question ${this.currentQuestionIndex + 1} skipped`);
 
     // Acknowledge
     await this.speak("Question skipped.");
@@ -279,10 +279,10 @@ export class VoiceService {
   // ============ COMPLETION LOGIC ============
 
   private async completeInterview(): Promise<void> {
-    console.log("🏁 completeInterview() called - FINISHING");
+    console.log("?? completeInterview() called - FINISHING");
 
     if (!this.isActive) {
-      console.log("❌ Not active, cannot complete");
+      console.log("? Not active, cannot complete");
       return;
     }
 
@@ -293,69 +293,95 @@ export class VoiceService {
       isProcessing: true
     });
 
-    await this.speak("Interview completed. Generating feedback...");
+    await this.speak("Interview completed. Redirecting to feedback...");
 
     try {
-      const transcript = this.messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // Prepare completion data
+      const completionData = {
+        success: true,
+        interviewId: this.interviewId,
+        userId: this.userId,
+        feedbackId: `local-${Date.now()}`,
+        message: "Interview completed successfully",
+        questionsAsked: this.interviewQuestions.length,
+        answersGiven: this.messages.filter(m => m.role === 'user').length,
+        transcript: this.messages,
+        timestamp: new Date().toISOString(),
+        fallback: false
+      };
 
-      console.log("📊 Sending to feedback API...");
+      console.log("?? Prepared completion data:", completionData);
 
-      // Call feedback API
-      const response = await fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          interviewId: this.interviewId,
-          userId: this.userId,
-          transcript: transcript
-        })
-      });
-
-      let data;
-      if (response.ok) {
-        data = await response.json();
-      } else {
-        data = { success: false, error: `API error: ${response.status}` };
-      }
-
-      console.log("📊 Feedback API response:", data);
-
-      // Call onComplete callback
+      // CRITICAL FIX: Call onComplete callback FIRST
       if (this.onCompleteCallback) {
-        console.log("📞 Calling onComplete callback");
-        this.onCompleteCallback({
-          success: true,
-          interviewId: this.interviewId,
-          feedbackId: data.feedbackId || `local-${Date.now()}`,
-          message: "Interview completed successfully",
-          questionsAsked: this.interviewQuestions.length,
-          answersGiven: this.messages.filter(m => m.role === 'user').length,
-          timestamp: new Date().toISOString()
-        });
+        console.log("?? Calling onComplete callback");
+        this.onCompleteCallback(completionData);
       } else {
-        console.error("❌ No onComplete callback registered!");
+        console.error("? No onComplete callback registered!");
+        // Try again after a short delay
+        setTimeout(() => {
+          if (this.onCompleteCallback) {
+            console.log("?? Retrying onComplete callback");
+            this.onCompleteCallback(completionData);
+          } else {
+            console.error("? Still no callback after retry");
+          }
+        }, 500);
       }
+
+      // Now try to generate feedback in background (non-blocking)
+      setTimeout(async () => {
+        try {
+          const transcript = this.messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }));
+
+          console.log("?? Sending to feedback API in background...");
+
+          const response = await fetch("/api/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              interviewId: this.interviewId,
+              userId: this.userId,
+              transcript: transcript
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log("?? Feedback API success:", data);
+          } else {
+            console.warn("?? Feedback API error:", response.status);
+          }
+        } catch (feedbackError) {
+          console.warn("?? Feedback API failed, but interview completed:", feedbackError);
+        }
+      }, 1000); // Start after 1 second
 
     } catch (error: any) {
-      console.error("❌ Error in completeInterview:", error);
+      console.error("? Error in completeInterview:", error);
 
-      // Still call onComplete even with error
+      // Call onComplete even with error
       if (this.onCompleteCallback) {
         this.onCompleteCallback({
           success: true,
           interviewId: this.interviewId,
+          userId: this.userId,
           feedbackId: `error-${Date.now()}`,
           message: "Interview completed with error",
           fallback: true,
-          error: error.message
+          error: error.message,
+          questionsAsked: this.interviewQuestions.length,
+          answersGiven: this.messages.filter(m => m.role === 'user').length,
+          timestamp: new Date().toISOString()
         });
       }
 
     } finally {
       this.updateState({ isProcessing: false });
+      console.log("?? Interview completion process finished");
     }
   }
 
@@ -363,7 +389,7 @@ export class VoiceService {
 
   private async speak(text: string): Promise<void> {
     if (!this.textToSpeech) {
-      console.log("🤖 AI:", text);
+      console.log("?? AI:", text);
       return;
     }
 
@@ -372,7 +398,7 @@ export class VoiceService {
     try {
       await this.textToSpeech.speak(text);
     } catch (error) {
-      console.log("🤖 AI:", text);
+      console.log("?? AI:", text);
     } finally {
       this.updateState({ isSpeaking: false });
     }
@@ -388,7 +414,7 @@ export class VoiceService {
   }
 
   private handleError(error: string): void {
-    console.error("❌ Error:", error);
+    console.error("? Error:", error);
     this.state.error = error;
     this.isActive = false;
     toast.error("Voice service error");
@@ -397,7 +423,7 @@ export class VoiceService {
   // ============ PUBLIC METHODS ============
 
   public stop(): void {
-    console.log("🛑 stop() called");
+    console.log("?? stop() called");
     this.isActive = false;
 
     this.speechToText?.stop();
@@ -410,20 +436,21 @@ export class VoiceService {
     });
   }
 
-  onStateChange(callback: (state: VoiceState) => void): void {
+  public onStateChange(callback: (state: VoiceState) => void): void {
     this.onStateChangeCallback = callback;
   }
 
-  onUpdate(callback: (messages: VoiceMessage[]) => void): void {
+  public onUpdate(callback: (messages: VoiceMessage[]) => void): void {
     this.onUpdateCallback = callback;
   }
 
-  onComplete(callback: (data: any) => void): void {
+  public onComplete(callback: (data: any) => void): void {
+    console.log("?? onComplete callback registered");
     this.onCompleteCallback = callback;
   }
 
-  destroy(): void {
-    console.log("💀 destroy() called");
+  public destroy(): void {
+    console.log("?? destroy() called");
     this.stop();
 
     this.speechToText?.destroy();

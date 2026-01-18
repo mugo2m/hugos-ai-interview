@@ -1,1 +1,29 @@
-<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 2.5h13v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1zM0 1h16v11.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 0 12.5zm3.75 4.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5M7 4.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0m1.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5" fill="#666"/></svg>
+<svg width="122.88" height="111.48" viewBox="0 0 122.88 111.48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Farmer silhouette -->
+  <circle cx="61.44" cy="40" r="15" fill="#4B5563"/>
+  <rect x="51.44" y="55" width="20" height="30" fill="#6B7280"/>
+  <path d="M41.44 85V111.48" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+  <path d="M81.44 85V111.48" stroke="#7C3AED" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Hat -->
+  <path d="M61.44 25C66.9667 25 71.44 20.5228 71.44 15C71.44 9.47715 66.9667 5 61.44 5C55.9133 5 51.44 9.47715 51.44 15C51.44 20.5228 55.9133 25 61.44 25Z" fill="#9CA3AF"/>
+
+  <!-- Pitchfork -->
+  <rect x="58.44" y="60" width="6" height="25" fill="#D97706"/>
+  <path d="M61.44 85L61.44 75" stroke="#B45309" stroke-width="3" stroke-linecap="round"/>
+  <path d="M56.44 70L66.44 70" stroke="#B45309" stroke-width="3" stroke-linecap="round"/>
+  <path d="M55.44 65L67.44 65" stroke="#B45309" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Barn -->
+  <path d="M20 50L61.44 10L102.88 50V90H20V50Z" fill="#DC2626" stroke="#991B1B" stroke-width="3"/>
+  <rect x="30" y="50" width="20" height="40" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+  <rect x="72.88" y="50" width="20" height="40" fill="#F59E0B" stroke="#D97706" stroke-width="2"/>
+  <rect x="51.44" y="65" width="20" height="25" fill="#1F2937" stroke="#111827" stroke-width="2"/>
+
+  <!-- Sun -->
+  <circle cx="100" cy="20" r="12" fill="#FBBF24" stroke="#F59E0B" stroke-width="2"/>
+  <path d="M100 8V32" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M88 20H112" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M92 12L108 28" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+  <path d="M92 28L108 12" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"/>
+</svg>
