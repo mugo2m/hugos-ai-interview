@@ -148,7 +148,8 @@ IMPORTANT FORMATTING RULES:
     console.log("🔍 [createFeedback] Feedback data to save:", {
       interviewId: feedback.interviewId,
       userId: feedback.userId,
-      totalScore: feedback.totalScore
+      totalScore: feedback.totalScore,
+      categoryScoresCount: feedback.categoryScores.length
     });
 
     const feedbackRef = feedbackId
@@ -158,6 +159,8 @@ IMPORTANT FORMATTING RULES:
     await feedbackRef.set(feedback, { ignoreUndefinedProperties: true });
 
     console.log("✅ [createFeedback] Feedback saved with ID:", feedbackRef.id);
+    console.log("📁 [createFeedback] Saved in collection: feedback");
+    console.log("🔗 [createFeedback] Document path:", feedbackRef.path);
 
     return {
       success: true,
@@ -169,6 +172,7 @@ IMPORTANT FORMATTING RULES:
     };
   } catch (error: any) {
     console.error("❌ [createFeedback] Error in feedback creation:", error.message);
+    console.error("Stack trace:", error.stack);
 
     return {
       success: false,
@@ -267,25 +271,25 @@ export async function getFeedbackByInterviewId(
 
   const { interviewId, userId } = params;
 
-  console.log("🔄 [getFeedbackByInterviewId] FRESH FETCH - No cache", {
-    timestamp: new Date().toISOString(),
-    interviewId,
-    userId
-  });
+  console.log("=".repeat(80));
+  console.log("🟡 [getFeedbackByInterviewId] SEARCHING FOR FEEDBACK");
+  console.log("🟡 Interview ID:", interviewId);
+  console.log("🟡 User ID:", userId);
+  console.log("🟡 Timestamp:", new Date().toISOString());
+  console.log("=".repeat(80));
 
   if (!interviewId || !userId) {
-    console.warn("⚠️ [getFeedbackByInterviewId] Missing userId or interviewId:", {
-      interviewId,
-      userId,
-      hasUserId: !!userId,
-      hasInterviewId: !!interviewId
-    });
+    console.error("🔴 [getFeedbackByInterviewId] MISSING PARAMETERS!");
+    console.error("   interviewId:", interviewId || "UNDEFINED");
+    console.error("   userId:", userId || "UNDEFINED");
     return null;
   }
 
-  console.log("📝 [getFeedbackByInterviewId] Looking for feedback:", { interviewId, userId });
-
   try {
+    console.log("🔍 [getFeedbackByInterviewId] Querying Firestore collection 'feedback'...");
+    console.log("   WHERE interviewId ==", interviewId);
+    console.log("   WHERE userId ==", userId);
+
     const querySnapshot = await db
       .collection("feedback")
       .where("interviewId", "==", interviewId)
@@ -293,26 +297,87 @@ export async function getFeedbackByInterviewId(
       .limit(1)
       .get();
 
-    console.log("📊 [getFeedbackByInterviewId] Query results:", querySnapshot.size, "found");
+    console.log("📊 [getFeedbackByInterviewId] Query returned:", querySnapshot.size, "document(s)");
 
     if (querySnapshot.empty) {
-      console.log("📭 [getFeedbackByInterviewId] No feedback found");
+      console.log("❌ [getFeedbackByInterviewId] NO FEEDBACK FOUND IN FIRESTORE!");
+
+      // DEBUG: Check total feedback documents
+      try {
+        console.log("🔬 [getFeedbackByInterviewId] Running diagnostic checks...");
+
+        // 1. Check total feedback count
+        const feedbackCount = await db.collection("feedback").count().get();
+        console.log(`   📈 Total feedback documents in 'feedback' collection: ${feedbackCount.data().count}`);
+
+        // 2. Check all feedback for this user
+        const userFeedback = await db.collection("feedback")
+          .where("userId", "==", userId)
+          .get();
+        console.log(`   👤 User has ${userFeedback.size} total feedback entries:`);
+
+        if (userFeedback.size > 0) {
+          userFeedback.forEach((doc, index) => {
+            const data = doc.data();
+            console.log(`      ${index + 1}. ID: ${doc.id}`);
+            console.log(`         InterviewID: ${data.interviewId}`);
+            console.log(`         Total Score: ${data.totalScore}`);
+            console.log(`         Created: ${data.createdAt}`);
+            console.log(`         Match? ${data.interviewId === interviewId ? "✅ YES" : "❌ NO"}`);
+          });
+        } else {
+          console.log("   👤 No feedback found for this user at all");
+        }
+
+        // 3. Check if interview exists
+        const interviewDoc = await db.collection("interviews").doc(interviewId).get();
+        console.log(`   📋 Interview document exists: ${interviewDoc.exists ? "✅ YES" : "❌ NO"}`);
+        if (interviewDoc.exists) {
+          const interviewData = interviewDoc.data();
+          console.log(`      Role: ${interviewData?.role}`);
+          console.log(`      UserID: ${interviewData?.userId}`);
+          console.log(`      Created: ${interviewData?.createdAt}`);
+        }
+
+      } catch (debugError) {
+        console.error("⚠️ [getFeedbackByInterviewId] Debug query failed:", debugError);
+      }
+
+      console.log("=".repeat(80));
       return null;
     }
 
     const feedbackDoc = querySnapshot.docs[0];
     const feedbackData = feedbackDoc.data();
 
-    console.log("✅ [getFeedbackByInterviewId] Feedback found with ID:", feedbackDoc.id);
-    console.log("📋 [getFeedbackByInterviewId] Feedback data:", {
-      totalScore: feedbackData.totalScore,
-      categoryScores: feedbackData.categoryScores?.length || 0,
-      timestamp: feedbackData.createdAt
-    });
+    console.log("✅ [getFeedbackByInterviewId] FEEDBACK FOUND!");
+    console.log("   Document ID:", feedbackDoc.id);
+    console.log("   Total Score:", feedbackData.totalScore);
+    console.log("   Created At:", feedbackData.createdAt);
+    console.log("   Category Scores:", feedbackData.categoryScores?.length || 0);
+    console.log("   Strengths:", feedbackData.strengths?.length || 0);
+    console.log("   Areas for Improvement:", feedbackData.areasForImprovement?.length || 0);
 
-    return { id: feedbackDoc.id, ...feedbackData } as Feedback;
-  } catch (error) {
-    console.error("❌ [getFeedbackByInterviewId] Error fetching feedback:", error);
+    // Validate the data structure
+    if (!feedbackData.totalScore) {
+      console.error("⚠️ [getFeedbackByInterviewId] Feedback found but missing totalScore!");
+    }
+    if (!feedbackData.categoryScores || !Array.isArray(feedbackData.categoryScores)) {
+      console.error("⚠️ [getFeedbackByInterviewId] Feedback found but missing/invalid categoryScores!");
+    }
+
+    console.log("=".repeat(80));
+
+    return {
+      id: feedbackDoc.id,
+      ...feedbackData
+    } as Feedback;
+  } catch (error: any) {
+    console.error("🔴 [getFeedbackByInterviewId] FIRESTORE ERROR!");
+    console.error("   Error:", error.message);
+    console.error("   Code:", error.code);
+    console.error("   Stack:", error.stack?.split('\n')[0]);
+    console.log("=".repeat(80));
     return null;
   }
 }
@@ -320,17 +385,14 @@ export async function getFeedbackByInterviewId(
 export async function getInterviewById(id: string): Promise<Interview | null> {
   'use server'; // CRITICAL: Ensure server-side execution
 
-  console.log("🔄 [getInterviewById] FRESH FETCH:", {
-    id,
-    timestamp: new Date().toISOString()
-  });
-
-  console.log("🔍 [getInterviewById] ==========================================");
-  console.log("🔍 [getInterviewById] Starting with ID:", id);
-  console.log("🔍 [getInterviewById] Timestamp:", new Date().toISOString());
+  console.log("=".repeat(80));
+  console.log("🟡 [getInterviewById] FETCHING INTERVIEW");
+  console.log("🟡 Interview ID:", id);
+  console.log("🟡 Timestamp:", new Date().toISOString());
+  console.log("=".repeat(80));
 
   if (!id || typeof id !== 'string' || id.trim() === '') {
-    console.error("❌ [getInterviewById] Invalid ID provided:", id);
+    console.error("🔴 [getInterviewById] Invalid ID provided:", id);
     return null;
   }
 
@@ -338,111 +400,78 @@ export async function getInterviewById(id: string): Promise<Interview | null> {
     console.log("🔥 [getInterviewById] Checking Firebase Admin initialization...");
 
     if (!db) {
-      console.error("❌ [getInterviewById] Firebase Admin 'db' is undefined or null");
-      console.error("❌ [getInterviewById] Check if @/firebase/admin is exporting 'db' correctly");
+      console.error("🔴 [getInterviewById] Firebase Admin 'db' is undefined or null");
       return null;
     }
 
-    console.log("📁 [getInterviewById] Using collection: 'interviews'");
+    console.log("📁 [getInterviewById] Fetching from collection: 'interviews'");
     console.log("📁 [getInterviewById] Document ID:", id);
 
     const docRef = db.collection("interviews").doc(id);
     console.log("📄 [getInterviewById] Document reference path:", docRef.path);
 
-    console.log("⚡ [getInterviewById] Attempting to fetch document from Firestore...");
     const doc = await docRef.get();
 
-    console.log("✅ [getInterviewById] Document retrieval complete");
-    console.log("📊 [getInterviewById] Document exists:", doc.exists);
+    console.log("📊 [getInterviewById] Document exists:", doc.exists ? "✅ YES" : "❌ NO");
 
     if (!doc.exists) {
       console.warn(`❌ [getInterviewById] Interview not found with id: ${id}`);
 
-      console.log("🩺 [getInterviewById] Running diagnostic check...");
+      // Diagnostic check
       try {
-        const testQuery = await db.collection("interviews").limit(1).get();
-        console.log(`📈 [getInterviewById] Collection 'interviews' exists with ${testQuery.size} total document(s)`);
-
         const allDocs = await db.collection("interviews").get();
         console.log(`📈 [getInterviewById] Total interviews in database: ${allDocs.size}`);
 
         const docIds = allDocs.docs.slice(0, 5).map(doc => doc.id);
         console.log(`📋 [getInterviewById] Sample document IDs: ${docIds.join(', ')}`);
-
-        const similarIds = allDocs.docs
-          .filter(d => d.id.toLowerCase().includes(id.toLowerCase()))
-          .map(d => d.id);
-
-        if (similarIds.length > 0) {
-          console.log(`🔍 [getInterviewById] Found similar IDs (case-insensitive): ${similarIds.join(', ')}`);
-        }
       } catch (diagError) {
         console.error("❌ [getInterviewById] Diagnostic check failed:", diagError);
       }
 
-      console.log("🔍 [getInterviewById] ==========================================");
+      console.log("=".repeat(80));
       return null;
     }
 
     const data = doc.data();
-    console.log("📋 [getInterviewById] Document data received");
 
     if (!data) {
       console.warn("❌ [getInterviewById] Document exists but data is null/undefined");
-      console.log("🔍 [getInterviewById] ==========================================");
+      console.log("=".repeat(80));
       return null;
     }
 
-    console.log("🎯 [getInterviewById] Key fields found:");
-    console.log("   - id:", doc.id);
-    console.log("   - role:", data.role || "MISSING");
-    console.log("   - type:", data.type || "MISSING");
-    console.log("   - level:", data.level || "MISSING");
-    console.log("   - userId:", data.userId || "MISSING");
-    console.log("   - questions count:", Array.isArray(data.questions) ? data.questions.length : "INVALID");
-    console.log("   - techstack:", Array.isArray(data.techstack) ? data.techstack.join(', ') : "INVALID");
-    console.log("   - createdAt:", data.createdAt || "MISSING");
-    console.log("   - finalized:", data.finalized !== undefined ? data.finalized : "MISSING");
-
-    const requiredFields = ['role', 'type', 'questions', 'userId'];
-    const missingFields = requiredFields.filter(field => !data[field]);
-
-    if (missingFields.length > 0) {
-      console.warn(`⚠️ [getInterviewById] Missing required fields: ${missingFields.join(', ')}`);
-    }
+    console.log("✅ [getInterviewById] INTERVIEW FOUND!");
+    console.log("   ID:", doc.id);
+    console.log("   Role:", data.role || "MISSING");
+    console.log("   Type:", data.type || "MISSING");
+    console.log("   Level:", data.level || "MISSING");
+    console.log("   UserID:", data.userId || "MISSING");
+    console.log("   Questions:", Array.isArray(data.questions) ? data.questions.length : "INVALID");
+    console.log("   Tech Stack:", Array.isArray(data.techstack) ? data.techstack.join(', ') : "INVALID");
+    console.log("   Created:", data.createdAt || "MISSING");
+    console.log("   Finalized:", data.finalized !== undefined ? data.finalized : "MISSING");
 
     const interview = {
       id: doc.id,
       ...data
     } as Interview;
 
-    console.log("✅ [getInterviewById] Successfully parsed interview object");
-    console.log("✅ [getInterviewById] Interview found and ready to return");
-    console.log("🔍 [getInterviewById] ==========================================");
-
+    console.log("=".repeat(80));
     return interview;
   } catch (error: any) {
-    console.error("❌ [getInterviewById] ERROR fetching interview:");
-    console.error("   Error name:", error?.name);
-    console.error("   Error message:", error?.message);
-    console.error("   Error code:", error?.code);
-    console.error("   Error stack:", error?.stack?.split('\n')[0]);
+    console.error("🔴 [getInterviewById] ERROR fetching interview:");
+    console.error("   Error:", error?.message);
+    console.error("   Code:", error?.code);
 
     if (error?.code === 'permission-denied') {
       console.error("   🔐 PERMISSION DENIED - Firebase rules are blocking access");
-      console.error("   🔐 Ensure Firebase Admin SDK has proper service account credentials");
     } else if (error?.code === 'not-found') {
       console.error("   🔍 NOT FOUND - Collection or document doesn't exist");
     } else if (error?.message?.includes('No app')) {
-      console.error("   🔥 FIREBASE NOT INITIALIZED - Check environment variables:");
-      console.error("   🔥 FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID ? "SET" : "MISSING");
-      console.error("   🔥 FIREBASE_CLIENT_EMAIL:", process.env.FIREBASE_CLIENT_EMAIL ? "SET" : "MISSING");
-      console.error("   🔥 FIREBASE_PRIVATE_KEY:", process.env.FIREBASE_PRIVATE_KEY ? "SET (first 20 chars)" : "MISSING");
-    } else if (error?.message?.includes('network')) {
-      console.error("   🌐 NETWORK ERROR - Check internet connection and Firebase access");
+      console.error("   🔥 FIREBASE NOT INITIALIZED");
     }
 
-    console.log("🔍 [getInterviewById] ==========================================");
+    console.log("=".repeat(80));
     return null;
   }
 }
