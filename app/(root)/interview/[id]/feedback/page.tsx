@@ -10,6 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/actions/auth.action";
 
+// FIX: Prevent caching - feedback shows immediately
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const Feedback = async ({ params }: RouteParams) => {
   const { id } = await params;
   const user = await getCurrentUser();

@@ -263,7 +263,15 @@ function normalizeFeedbackStructure(data: any): any {
 export async function getFeedbackByInterviewId(
   params: GetFeedbackByInterviewIdParams
 ): Promise<Feedback | null> {
+  'use server'; // CRITICAL: Ensure server-side execution
+
   const { interviewId, userId } = params;
+
+  console.log("🔄 [getFeedbackByInterviewId] FRESH FETCH - No cache", {
+    timestamp: new Date().toISOString(),
+    interviewId,
+    userId
+  });
 
   if (!interviewId || !userId) {
     console.warn("⚠️ [getFeedbackByInterviewId] Missing userId or interviewId:", {
@@ -296,10 +304,10 @@ export async function getFeedbackByInterviewId(
     const feedbackData = feedbackDoc.data();
 
     console.log("✅ [getFeedbackByInterviewId] Feedback found with ID:", feedbackDoc.id);
-    console.log("📋 [getFeedbackByInterviewId] Feedback structure:", {
+    console.log("📋 [getFeedbackByInterviewId] Feedback data:", {
       totalScore: feedbackData.totalScore,
-      categoryScoresType: Array.isArray(feedbackData.categoryScores),
-      categoryScoresLength: Array.isArray(feedbackData.categoryScores) ? feedbackData.categoryScores.length : 'N/A'
+      categoryScores: feedbackData.categoryScores?.length || 0,
+      timestamp: feedbackData.createdAt
     });
 
     return { id: feedbackDoc.id, ...feedbackData } as Feedback;
@@ -310,6 +318,13 @@ export async function getFeedbackByInterviewId(
 }
 
 export async function getInterviewById(id: string): Promise<Interview | null> {
+  'use server'; // CRITICAL: Ensure server-side execution
+
+  console.log("🔄 [getInterviewById] FRESH FETCH:", {
+    id,
+    timestamp: new Date().toISOString()
+  });
+
   console.log("🔍 [getInterviewById] ==========================================");
   console.log("🔍 [getInterviewById] Starting with ID:", id);
   console.log("🔍 [getInterviewById] Timestamp:", new Date().toISOString());
@@ -507,7 +522,7 @@ export async function getLatestInterviews(
   }
 }
 
-// Type definitions (add these if not already defined)
+// Type definitions
 interface CreateFeedbackParams {
   interviewId: string;
   userId: string;
