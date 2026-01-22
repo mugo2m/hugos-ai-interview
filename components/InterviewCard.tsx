@@ -29,7 +29,6 @@ const InterviewCard = async ({
 
   // DEBUG: Check feedback result
   console.log("InterviewCard DEBUG - feedback found:", !!feedback);
-  console.log("InterviewCard DEBUG - feedback ID:", feedback?.id);
 
   const normalizedType = /mix/gi.test(type) ? "Mixed" : type;
 
@@ -102,12 +101,11 @@ const InterviewCard = async ({
             <Link
               href={
                 feedback
-                  ? `/feedback/${feedback.id}`  // ✅ Changed: Use feedback.id instead of interview.id
+                  ? `/interview/${id}/feedback`
                   : `/interview/${id}`
               }
-              className="flex w-full h-full items-center justify-center"
             >
-              {feedback ? "View Feedback" : "Take Interview"}
+              {feedback ? "Check Feedback" : "View Interview"}
             </Link>
           </Button>
         </div>

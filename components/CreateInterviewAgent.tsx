@@ -335,8 +335,8 @@ const CreateInterviewAgent = ({
     }));
 
     await voiceAssistantRef.current.speak(
-      "Welcome! I'll help you create a custom interview. " +
-      "First, I need to ask you a few questions to customize your interview. " +
+      "Welcome! I'll help you create interview and practice for job you are applying for. " +
+      "First, I need to ask you a few questions . " +
       "Please speak clearly after each question."
     );
 
